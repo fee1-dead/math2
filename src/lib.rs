@@ -1,13 +1,14 @@
 use std::fmt::Debug;
-use std::iter::repeat_with;
-use std::ops::{Add, Div, Neg, Sub, Mul, AddAssign};
+use std::iter::{repeat_with, Product, Sum};
+use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
 use num::{One, Zero};
 use traits::{CommutativeRing, Field, FromUsize};
 
 pub mod factorization;
-pub mod traits;
 pub mod print;
+pub mod traits;
+pub mod modular_arith;
 
 #[cfg(test)]
 mod tests;
@@ -32,7 +33,9 @@ impl<Ring: CommutativeRing> Polynomial<Ring> {
     }
 
     pub fn trim_zeros(&mut self) {
-        self.coeffs.truncate(self.coeffs.len() - self.coeffs.iter().rev().take_while(|x| x.is_zero()).count());
+        self.coeffs.truncate(
+            self.coeffs.len() - self.coeffs.iter().rev().take_while(|x| x.is_zero()).count(),
+        );
     }
 
     pub fn take(&mut self) -> Self {
@@ -60,7 +63,7 @@ impl<Ring: CommutativeRing> Polynomial<Ring> {
     }
 
     /// The leading coefficient of the polynomial.
-    /// 
+    ///
     /// `None` if the polynomial is zero. (should technically be `Ring::zero()`, but we avoid cloning by taking a reference)
     pub fn leading_coefficient(&self) -> Option<&Ring> {
         self.coeffs.last()
@@ -100,7 +103,10 @@ impl<Ring: CommutativeRing> Polynomial<Ring> {
     }
 
     /// Performs differentiation with respect to the polynomial's variable
-    pub fn derive_in_place(&mut self) where Ring: FromUsize {
+    pub fn derive_in_place(&mut self)
+    where
+        Ring: FromUsize,
+    {
         if self.coeffs.len() <= 1 {
             self.coeffs.clear();
             return;
@@ -112,7 +118,10 @@ impl<Ring: CommutativeRing> Polynomial<Ring> {
         self.coeffs.remove(0);
     }
 
-    pub fn derivative(mut self) -> Self where Ring: FromUsize {
+    pub fn derivative(mut self) -> Self
+    where
+        Ring: FromUsize,
+    {
         self.derive_in_place();
         self
     }
@@ -122,7 +131,6 @@ impl<Ring: CommutativeRing> Polynomial<Ring> {
     where
         Ring: Div<Ring, Output = Ring>,
     {
-
         let mut quotient = Polynomial::zero();
         let mut remainder = self;
 
@@ -139,7 +147,9 @@ impl<Ring: CommutativeRing> Polynomial<Ring> {
             let lcr = remainder.leading_coefficient_cloned();
             let s = lcr.clone() / lcv.clone();
             quotient += Polynomial::from_elem_with_degree(s.clone(), m - n);
-            let poly = (other.clone() - Polynomial::from_elem_with_degree(lcv.clone(), n)).scalar_mul(s).raised_by(m - n);
+            let poly = (other.clone() - Polynomial::from_elem_with_degree(lcv.clone(), n))
+                .scalar_mul(s)
+                .raised_by(m - n);
             remainder = (remainder - Polynomial::from_elem_with_degree(lcr, m)) - poly;
             m = remainder.degree().unwrap_or(0);
         }
@@ -160,7 +170,11 @@ impl<Ring: CommutativeRing> Polynomial<Ring> {
             self = other;
             other = r;
         }
-        let lc = self.leading_coefficient_cloned().clone().checked_inv().unwrap();
+        let lc = self
+            .leading_coefficient_cloned()
+            .clone()
+            .checked_inv()
+            .unwrap();
         self.scalar_mul(lc)
     }
 }
@@ -237,7 +251,9 @@ impl<Ring: CommutativeRing> Mul for Polynomial<Ring> {
             }
             coeffs.push(Polynomial::new(new_coeffs));
         }
-        coeffs.into_iter().fold(Polynomial::new(vec![]), |a, b| a + b)
+        coeffs
+            .into_iter()
+            .fold(Polynomial::new(vec![]), |a, b| a + b)
     }
 }
 
@@ -253,6 +269,18 @@ impl<Ring: CommutativeRing + PartialEq> Mul<Ring> for Polynomial<Ring> {
             self.coeffs = self.coeffs.into_iter().map(|a| a * rhs.clone()).collect();
             self
         }
+    }
+}
+
+impl<Ring: CommutativeRing> Product for Polynomial<Ring> {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::one(), |a, b| a * b)
+    }
+}
+
+impl<Ring: CommutativeRing> Sum for Polynomial<Ring> {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::zero(), |a, b| a + b)
     }
 }
 

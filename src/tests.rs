@@ -52,8 +52,26 @@ pub fn test_gcd() {
 #[test]
 pub fn test_square_free_factorization() {
     let u = Polynomial::new(v![-16, -24, -4, 10, 6, 1]);
-    assert_eq!("x^5 + 6x^4 + 10x^3 - 4x^2 - 24x - 16", u.print_with_var("x").to_string().as_str());
+    assert_eq!(
+        "x^5 + 6x^4 + 10x^3 - 4x^2 - 24x - 16",
+        u.print_with_var("x").to_string().as_str()
+    );
 
     let sqf = u.clone().square_free_factorization();
-    assert_eq!("(x^2 - 2)(x + 2)^3", sqf.print_with_var("x").to_string().as_str());
+    assert_eq!(
+        "(x^2 - 2)(x + 2)^3",
+        sqf.print_with_var("x").to_string().as_str()
+    );
+
+    let u = Polynomial::new(v![24, 132, 90, -525, -750]);
+    assert_eq!(
+        "-750x^4 - 525x^3 + 90x^2 + 132x + 24",
+        u.print_with_var("x").to_string().as_str()
+    );
+
+    let sqf = u.clone().square_free_factorization();
+    assert_eq!(
+        "-3(2x - 1)(5x + 2)^3",
+        sqf.print_with_var("x").to_string().as_str()
+    );
 }

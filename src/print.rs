@@ -2,9 +2,9 @@ use std::fmt::{self, Display};
 
 use num::Signed;
 
-use crate::Polynomial;
 use crate::factorization::SquareFreeFactorization;
 use crate::traits::CommutativeRing;
+use crate::Polynomial;
 
 pub trait PrintableCoeff: Display + CommutativeRing + PartialEq + Signed {}
 
@@ -34,7 +34,10 @@ impl<T: PrintableCoeff> Polynomial<T> {
 }
 
 impl<T: PrintableCoeff> SquareFreeFactorization<T> {
-    pub fn print_with_var<'a>(&'a self, var: &'a str) -> PrintWithVar<'a, SquareFreeFactorization<T>> {
+    pub fn print_with_var<'a>(
+        &'a self,
+        var: &'a str,
+    ) -> PrintWithVar<'a, SquareFreeFactorization<T>> {
         PrintWithVar {
             var: var.into(),
             thing: self,
@@ -50,7 +53,7 @@ pub struct PrintWithVar<'a, F> {
 impl<T: PrintableCoeff> Display for PrintWithVar<'_, Polynomial<T>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut first = true;
-        let Self { var, ..} = self;
+        let Self { var, .. } = self;
         for (degree, coeff) in self.thing.coeffs.iter().enumerate().rev() {
             if coeff.is_zero() {
                 continue;
@@ -59,14 +62,21 @@ impl<T: PrintableCoeff> Display for PrintWithVar<'_, Polynomial<T>> {
             if !first {
                 f.write_str(if coeff.is_negative() { " - " } else { " + " })?;
             }
+
+            let abs;
+            let coeff = if first {
+                coeff
+            } else {
+                abs = coeff.abs();
+                &abs
+            };
+
             first = false;
-            
-            let coeff = coeff.abs();
-            
+
             if degree == 0 {
                 write!(f, "{coeff}")?;
             } else {
-                print_if_not_one(&coeff, f)?;
+                print_if_not_one(coeff, f)?;
                 if degree == 1 {
                     write!(f, "{var}")?;
                 } else {
@@ -91,4 +101,3 @@ impl<T: PrintableCoeff> Display for PrintWithVar<'_, SquareFreeFactorization<T>>
         Ok(())
     }
 }
-
