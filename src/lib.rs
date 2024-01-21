@@ -3,7 +3,7 @@ use std::iter::{repeat_with, Product, Sum};
 use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
 use num::{One, Zero};
-use traits::{CommutativeRing, Field, FromUsize};
+use traits::{CommutativeRing, Field, FromUsize, CoefficientDomain};
 
 pub mod factorization;
 pub mod print;
@@ -177,6 +177,25 @@ impl<Ring: CommutativeRing> Polynomial<Ring> {
             .unwrap();
         self.scalar_mul(lc)
     }
+
+    /// Returns the "content" of this polynomial, which is the non-negative
+    /// greatest common divisor of coefficients in this polynomial.
+    pub fn content(self) -> Ring where Ring: CoefficientDomain {
+        if self.coeffs.is_empty() {
+            return Ring::zero();
+        }
+
+        match <[Ring; 1]>::try_from(self.coeffs) {
+            Ok([x]) => x.unit_and_normal().1,
+            Err(mut v) => {
+                let mut x = v.pop().unwrap();
+                for y in v {
+                    x = x.gcd(&y);
+                }
+                x
+            }
+        }
+    }
 }
 
 impl<Ring: CommutativeRing> FromIterator<Ring> for Polynomial<Ring> {
@@ -291,5 +310,3 @@ impl<Ring: CommutativeRing> Neg for Polynomial<Ring> {
     }
 }
 
-/// The ring of polynomials over a ring (`R[x]`)
-impl<Ring: CommutativeRing> CommutativeRing for Polynomial<Ring> {}
