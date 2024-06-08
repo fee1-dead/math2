@@ -175,8 +175,9 @@ impl<Ring: CommutativeRing> CommutativeRing for Polynomial<Ring> {
     fn invert(x: &AssertUnit<Self>) -> AssertUnit<Self> {
         todo!()
     }
+    /// https://kconrad.math.uconn.edu/blurbs/ringtheory/polynomial-properties.pdf
     fn is_nilpotent(&self) -> bool {
-        todo!()
+        self.coeffs.iter().all(Ring::is_nilpotent)
     }
 }
 
